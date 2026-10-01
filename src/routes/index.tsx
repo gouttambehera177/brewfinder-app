@@ -7,7 +7,10 @@ import { CafeCard } from "@/components/brew/CafeCard";
 import { CafeDetail } from "@/components/brew/CafeDetail";
 import { FilterBar, type Filters } from "@/components/brew/FilterBar";
 import { SearchBar } from "@/components/brew/SearchBar";
-import { DEFAULT_CENTER, getRoute, haversine, localizeCafes, type LatLng, type RouteInfo } from "@/lib/geo";
+import { useQuery } from "@tanstack/react-query";
+import { DEFAULT_CENTER, getRoute, haversine, type LatLng, type RouteInfo } from "@/lib/geo";
+import { searchNearbyCafes } from "@/lib/places.functions";
+import type { Cafe } from "@/lib/places.types";
 import { readCache, writeCache } from "@/lib/offline-cache";
 import { registerServiceWorker } from "@/lib/pwa";
 
@@ -16,9 +19,9 @@ const CafeMap = lazy(() => import("@/components/brew/CafeMap"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "BrewNear — Find great cafes near you" },
+      { title: "BrewNear — Find cafes & chai spots near you" },
       { name: "description", content: "Discover nearby cafes on a map, filter by distance, price and vibe, and get walking or driving routes — even offline." },
-      { property: "og:title", content: "BrewNear — Find great cafes near you" },
+      { property: "og:title", content: "BrewNear — Find cafes & chai spots near you" },
       { property: "og:description", content: "Discover nearby cafes, filter by radius and vibe, and get routes — even offline." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -73,7 +76,25 @@ function Index() {
     };
   }, [locate]);
 
-  const all = useMemo(() => localizeCafes(center), [center]);
+  const cacheKey = `brewnear:cafes:${center.lat.toFixed(3)},${center.lng.toFixed(3)},${filters.radius}`;
+  const { data: fetched, isFetching, error } = useQuery({
+    queryKey: ["cafes", center.lat.toFixed(4), center.lng.toFixed(4), filters.radius],
+    queryFn: async () => {
+      try {
+        const res = await searchNearbyCafes({ data: { lat: center.lat, lng: center.lng, radius: filters.radius } });
+        writeCache(cacheKey, res);
+        return res;
+      } catch (e) {
+        const saved = readCache<Cafe[]>(cacheKey);
+        if (saved) return saved;
+        throw e;
+      }
+    },
+    enabled: mounted,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+  const all: Cafe[] = useMemo(() => fetched ?? [], [fetched]);
   const cuisines = useMemo(() => [...new Set(all.map((c) => c.cuisine))].sort(), [all]);
 
   const visible = useMemo(() => {
@@ -104,20 +125,23 @@ function Index() {
   useEffect(() => {
     if (!mounted) return;
     let cancelled = false;
-    visible.forEach(({ cafe }) => {
-      const k = routeKey(cafe.id);
-      if (routes[k]) return;
-      getRoute(center, cafe, filters.mode).then((r) => {
-        if (!cancelled) setRoutes((prev) => ({ ...prev, [k]: r }));
-      });
+    if (!selected) return;
+    const k = routeKey(selected.id);
+    if (routes[k]) return;
+    getRoute(center, selected, filters.mode).then((r) => {
+      if (!cancelled) setRoutes((prev) => ({ ...prev, [k]: r }));
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, visible, filters.mode, center]);
+  }, [mounted, selected?.id, filters.mode, center]);
 
   const list = (
     <div className="space-y-3">
-      {visible.length === 0 ? (
+      {isFetching && all.length === 0 ? (
+        <p className="p-6 text-center text-sm text-muted-foreground">Finding real cafes near you…</p>
+      ) : error && all.length === 0 ? (
+        <p className="p-6 text-center text-sm text-destructive">Couldn't load cafes from Google right now. Please try again.</p>
+      ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
           <Coffee className="mx-auto mb-2 h-6 w-6 text-primary" />
           No cafes match. Try a wider radius or fewer filters.
