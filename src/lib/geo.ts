@@ -93,7 +93,8 @@ export async function getRoute(
     if (!route) throw new Error("no route");
     const info: RouteInfo = {
       distanceMeters: route.distance,
-      durationSeconds: route.duration,
+      // The public demo server only routes cars, so derive walking time from distance.
+      durationSeconds: mode === "walking" ? route.distance / 1.35 : route.duration,
       geometry: route.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]),
       estimated: false,
     };
