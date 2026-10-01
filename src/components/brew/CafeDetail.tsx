@@ -1,12 +1,12 @@
-import { Star, Phone, Mail, MapPin, Globe, Navigation, X } from "lucide-react";
+import { Star, Phone, MapPin, Globe, Navigation, X, Clock } from "lucide-react";
 
-import type { Cafe } from "@/data/cafes";
+import type { Cafe, RouteInfo, TravelMode } from "@/lib/places.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistance, formatDuration, type RouteInfo, type TravelMode } from "@/lib/geo";
+import { formatDistance, formatDuration } from "@/lib/geo";
 import { priceLabel } from "@/components/brew/CafeCard";
+import { PlacePhoto } from "@/components/brew/PlacePhoto";
 
 type Props = {
   cafe: Cafe;
@@ -16,156 +16,122 @@ type Props = {
 };
 
 export function CafeDetail({ cafe, route, mode, onClose }: Props) {
-  const directions = `https://www.google.com/maps/dir/?api=1&destination=${cafe.lat},${cafe.lng}&travelmode=${mode === "driving" ? "driving" : "walking"}`;
+  const directions = `https://www.google.com/maps/dir/?api=1&destination=${cafe.lat},${cafe.lng}&destination_place_id=${cafe.id}&travelmode=${mode === "driving" ? "driving" : "walking"}`;
 
   return (
     <div className="flex h-full flex-col bg-card">
       <div className="relative">
-        <img
-          src={cafe.photos[0]}
-          alt={`${cafe.name} interior`}
-          width={1024}
-          height={768}
-          className="h-44 w-full object-cover"
-        />
-        <Button
-          size="icon"
-          variant="secondary"
-          onClick={onClose}
-          aria-label="Close details"
-          className="absolute right-3 top-3 rounded-full shadow-warm"
-        >
+        <PlacePhoto name={cafe.photoName} alt={cafe.name} className="h-44 w-full" />
+        {cafe.photoAttribution && (
+          <span className="absolute bottom-1 left-2 rounded bg-background/80 px-1.5 text-[10px] text-muted-foreground">
+            Photo: {cafe.photoAttribution.uri ? (
+              <a href={cafe.photoAttribution.uri} target="_blank" rel="noreferrer" className="underline">{cafe.photoAttribution.name}</a>
+            ) : cafe.photoAttribution.name}
+          </span>
+        )}
+        <Button size="icon" variant="secondary" onClick={onClose} aria-label="Close details" className="absolute right-3 top-3 rounded-full shadow-warm">
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-5 p-5">
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground">{cafe.name}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{cafe.tagline}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-              <span className="flex items-center gap-1 font-medium">
-                <Star className="h-4 w-4 fill-accent text-accent" />
-                {cafe.rating.toFixed(1)}
-                <span className="text-muted-foreground">({cafe.reviewCount})</span>
+      <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        <div>
+          <h2 className="font-display text-2xl font-semibold text-foreground">{cafe.name}</h2>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            {cafe.rating > 0 && (
+              <span className="flex items-center gap-1 font-medium text-foreground">
+                <Star className="h-4 w-4 fill-accent text-accent" /> {cafe.rating.toFixed(1)}
               </span>
-              <span className="text-muted-foreground">{priceLabel(cafe.price)}</span>
-              <span className="text-muted-foreground">{cafe.cuisine}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {cafe.ambience.map((a) => (
-              <Badge key={a} variant="secondary" className="rounded-full capitalize">
-                {a}
-              </Badge>
-            ))}
-          </div>
-
-          <div className="rounded-2xl bg-secondary/60 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {mode === "driving" ? "By road" : "Walking"}
-            </p>
-            <p className="mt-1 font-display text-lg text-foreground">
-              {route
-                ? `${formatDuration(route.durationSeconds)} · ${formatDistance(route.distanceMeters)}`
-                : "Calculating route…"}
-            </p>
-            {route?.estimated && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Offline estimate — reconnect for live routing.
-              </p>
             )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            {cafe.photos.map((p, i) => (
-              <img
-                key={i}
-                src={p}
-                alt={`${cafe.name} photo ${i + 1}`}
-                loading="lazy"
-                width={1024}
-                height={768}
-                className="h-28 w-full rounded-xl object-cover"
-              />
+            <span>({cafe.reviewCount.toLocaleString("en-IN")} Google reviews)</span>
+            <span>· {priceLabel(cafe.price)}</span>
+            <span>· {cafe.cuisine}</span>
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {cafe.openNow !== null && (
+              <Badge variant={cafe.openNow ? "default" : "outline"} className="rounded-full">{cafe.openNow ? "Open now" : "Closed now"}</Badge>
+            )}
+            {cafe.ambience.map((a) => (
+              <Badge key={a} variant="secondary" className="rounded-full capitalize">{a}</Badge>
             ))}
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2 text-sm">
-            <p className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" />
-              {cafe.address}
-            </p>
-            <p className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-primary" />
-              <a href={`tel:${cafe.phone}`} className="hover:underline">
-                {cafe.phone}
-              </a>
-            </p>
-            <p className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" />
-              <a href={`mailto:${cafe.email}`} className="hover:underline">
-                {cafe.email}
-              </a>
-            </p>
-            <p className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-primary" />
-              {cafe.website}
-            </p>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Opening hours
-            </h3>
-            <dl className="mt-2 space-y-1 text-sm">
-              {Object.entries(cafe.hours).map(([day, value]) => (
-                <div key={day} className="flex justify-between">
-                  <dt className="text-muted-foreground">{day}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Reviews
-            </h3>
-            <ul className="mt-3 space-y-3">
-              {cafe.reviews.map((r, i) => (
-                <li key={i} className="rounded-xl border border-border/70 p-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{r.author}</span>
-                    <span className="flex items-center gap-1">
-                      <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-                      {r.rating}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{r.text}</p>
-                  <p className="mt-1 text-xs text-muted-foreground/70">{r.date}</p>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
-      </ScrollArea>
 
-      <div className="border-t border-border/70 p-4">
-        <Button asChild className="w-full rounded-xl" size="lg">
-          <a href={directions} target="_blank" rel="noreferrer">
-            <Navigation className="mr-2 h-4 w-4" />
-            Get directions
-          </a>
-        </Button>
+        <div className="rounded-2xl bg-secondary/60 p-3 text-sm">
+          {route ? (
+            <p className="text-foreground">
+              <span className="font-semibold">{formatDistance(route.distanceMeters)}</span> ·{" "}
+              <span className="font-semibold">{formatDuration(route.durationSeconds)}</span>{" "}
+              {mode === "driving" ? "by road" : "walking"}
+              {route.estimated ? " (approx., offline)" : " · via Google"}
+            </p>
+          ) : (
+            <p className="text-muted-foreground">Calculating route…</p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild className="rounded-full">
+            <a href={directions} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Directions</a>
+          </Button>
+          {cafe.phone ? (
+            <Button asChild variant="outline" className="rounded-full">
+              <a href={`tel:${cafe.phone.replace(/\s/g, "")}`}><Phone className="mr-1.5 h-4 w-4" /> Call</a>
+            </Button>
+          ) : (
+            <Button variant="outline" className="rounded-full" disabled>No phone</Button>
+          )}
+        </div>
+
+        <div className="space-y-2 text-sm">
+          <p className="flex gap-2 text-foreground"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {cafe.address}</p>
+          {cafe.phone && <p className="flex gap-2 text-foreground"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {cafe.phone}</p>}
+          {cafe.website && (
+            <a href={cafe.website} target="_blank" rel="noreferrer" className="flex gap-2 truncate text-primary underline-offset-2 hover:underline">
+              <Globe className="mt-0.5 h-4 w-4 shrink-0" /> {cafe.website.replace(/^https?:\/\//, "")}
+            </a>
+          )}
+          {cafe.mapsUri && (
+            <a href={cafe.mapsUri} target="_blank" rel="noreferrer" className="flex gap-2 text-primary underline-offset-2 hover:underline">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0" /> View on Google Maps
+            </a>
+          )}
+        </div>
+
+        {cafe.hours.length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground"><Clock className="h-4 w-4 text-primary" /> Opening hours</h3>
+              <ul className="space-y-0.5 text-xs text-muted-foreground">
+                {cafe.hours.map((h) => <li key={h}>{h}</li>)}
+              </ul>
+            </div>
+          </>
+        )}
+
+        {cafe.reviews.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Recent Google reviews</h3>
+              {cafe.reviews.map((r, i) => (
+                <div key={i} className="rounded-xl border border-border/70 p-3">
+                  <div className="flex items-center justify-between text-xs">
+                    {r.authorUri ? (
+                      <a href={r.authorUri} target="_blank" rel="noreferrer" className="font-medium text-foreground hover:underline">{r.author}</a>
+                    ) : <span className="font-medium text-foreground">{r.author}</span>}
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Star className="h-3 w-3 fill-accent text-accent" /> {r.rating} · {r.when}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 line-clamp-4 text-xs text-muted-foreground">{r.text}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <p className="text-[10px] text-muted-foreground">Data © Google</p>
       </div>
     </div>
   );
