@@ -121,7 +121,7 @@
   font: 600 11px "Outfit", sans-serif; box-shadow: var(--shadow-warm); transition: all .2s;
 }
 .brew-pin-active { background: var(--primary); color: var(--primary-foreground); transform: scale(1.15); }
-.leaflet-container { font-family: "Outfit", sans-serif; background: var(--muted); }
+
 
 @layer base {
   * {
