@@ -1,0 +1,9 @@
+{
+  "name": "BrewNear — Cafe Finder",
+  "short_name": "BrewNear",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f0e6",
+  "theme_color": "#4a2c1d",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

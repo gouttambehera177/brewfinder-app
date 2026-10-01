@@ -170,7 +170,7 @@ export function FilterBar({ filters, cuisines, onChange }: Props) {
               min={0}
               max={5}
               step={0.1}
-              onValueChange={([v]) => onChange({ minRating: v })}
+              onValueChange={([v]) => onChange({ minRating: v ?? 0 })}
             />
           </div>
         </PopoverContent>
