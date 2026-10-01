@@ -116,11 +116,11 @@
 
 .brew-pin {
   display: flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  width: 38px; height: 38px; border-radius: 50%;
   background: var(--card); color: var(--foreground); border: 2px solid var(--primary);
   font: 600 11px "Outfit", sans-serif; box-shadow: var(--shadow-warm); transition: all .2s;
 }
-.brew-pin-active { background: var(--primary); color: var(--primary-foreground); transform: rotate(-45deg) scale(1.15); }
+.brew-pin-active { background: var(--primary); color: var(--primary-foreground); transform: scale(1.15); }
 .leaflet-container { font-family: "Outfit", sans-serif; background: var(--muted); }
 
 @layer base {
