@@ -1,6 +1,6 @@
 import { Car, Footprints, SlidersHorizontal } from "lucide-react";
 
-import type { Ambience } from "@/data/cafes";
+import type { Ambience } from "@/lib/places.types";
 import type { TravelMode } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const RADII = [100, 200, 500, 1000] as const;
-export const AMBIENCES: Ambience[] = ["cozy", "work-friendly", "outdoor seating", "romantic", "lively"];
+export const AMBIENCES: Ambience[] = ["outdoor seating", "good for groups", "vegetarian", "dine-in", "takeout"];
 
 export type SortKey = "distance" | "rating" | "reviews" | "price";
 
@@ -116,13 +116,13 @@ export function FilterBar({ filters, cuisines, onChange }: Props) {
           <div>
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Price</Label>
             <div className="mt-2 flex gap-2">
-              {[1, 2, 3].map((p) => (
+              {[1, 2, 3, 4].map((p) => (
                 <Pill
                   key={p}
                   active={filters.prices.includes(p)}
                   onClick={() => onChange({ prices: toggleIn(filters.prices, p) })}
                 >
-                  {"$".repeat(p)}
+                  {"₹".repeat(p)}
                 </Pill>
               ))}
             </div>

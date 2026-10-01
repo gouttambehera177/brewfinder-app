@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Search, LocateFixed, X } from "lucide-react";
 
-import type { Cafe } from "@/data/cafes";
+import type { Cafe } from "@/lib/places.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
