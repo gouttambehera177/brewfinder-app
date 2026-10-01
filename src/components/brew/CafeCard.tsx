@@ -7,7 +7,7 @@ import { formatDistance, formatDuration, type RouteInfo } from "@/lib/geo";
 
 type Props = {
   cafe: Cafe;
-  route?: RouteInfo;
+  route?: RouteInfo | undefined;
   straightDistance: number;
   active: boolean;
   onSelect: () => void;
