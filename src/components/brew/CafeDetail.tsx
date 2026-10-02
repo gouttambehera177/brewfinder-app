@@ -15,6 +15,12 @@ type Props = {
   onClose: () => void;
 };
 
+/** Open Google pages in a real new tab; Google refuses to load inside the app frame. */
+function openExternal(url: string) {
+  const w = window.open(url, "_blank", "noopener,noreferrer");
+  if (!w) window.location.assign(url);
+}
+
 export function CafeDetail({ cafe, route, mode, onClose }: Props) {
   const directions = `https://www.google.com/maps/dir/?api=1&destination=${cafe.lat},${cafe.lng}&destination_place_id=${cafe.id}&travelmode=${mode === "driving" ? "driving" : "walking"}`;
 
@@ -62,7 +68,7 @@ export function CafeDetail({ cafe, route, mode, onClose }: Props) {
             <p className="text-foreground">
               <span className="font-semibold">{formatDistance(route.distanceMeters)}</span> ·{" "}
               <span className="font-semibold">{formatDuration(route.durationSeconds)}</span>{" "}
-              {mode === "driving" ? "by road" : "walking"}
+              {mode === "driving" ? "by road" : "walking"} — route shown on the map
               {route.estimated ? " (approx., offline)" : " · via Google"}
             </p>
           ) : (
@@ -71,8 +77,8 @@ export function CafeDetail({ cafe, route, mode, onClose }: Props) {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Button asChild className="rounded-full">
-            <a href={directions} target="_blank" rel="noreferrer"><Navigation className="mr-1.5 h-4 w-4" /> Directions</a>
+          <Button className="rounded-full" onClick={() => openExternal(directions)}>
+            <Navigation className="mr-1.5 h-4 w-4" /> Navigate
           </Button>
           {cafe.phone ? (
             <Button asChild variant="outline" className="rounded-full">
@@ -92,9 +98,9 @@ export function CafeDetail({ cafe, route, mode, onClose }: Props) {
             </a>
           )}
           {cafe.mapsUri && (
-            <a href={cafe.mapsUri} target="_blank" rel="noreferrer" className="flex gap-2 text-primary underline-offset-2 hover:underline">
+            <button type="button" onClick={() => openExternal(cafe.mapsUri!)} className="flex gap-2 text-left text-primary underline-offset-2 hover:underline">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0" /> View on Google Maps
-            </a>
+            </button>
           )}
         </div>
 
