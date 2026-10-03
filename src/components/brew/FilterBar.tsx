@@ -1,4 +1,4 @@
-import { Car, Footprints, SlidersHorizontal } from "lucide-react";
+import { Car, Footprints, SlidersHorizontal, Heart, Clock } from "lucide-react";
 
 import type { Ambience } from "@/lib/places.types";
 import type { TravelMode } from "@/lib/geo";
@@ -23,6 +23,8 @@ export type Filters = {
   cuisine: string;
   minRating: number;
   sort: SortKey;
+  openNow: boolean;
+  savedOnly: boolean;
 };
 
 type Props = {
@@ -49,7 +51,7 @@ function Pill({
       aria-pressed={active}
       aria-label={label}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
+        "shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
         active
           ? "border-primary bg-primary text-primary-foreground shadow-warm"
           : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground",
@@ -68,8 +70,8 @@ export function FilterBar({ filters, cuisines, onChange }: Props) {
     filters.prices.length + filters.ambience.length + (filters.cuisine === "all" ? 0 : 1) + (filters.minRating > 0 ? 1 : 0);
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-1 rounded-full bg-secondary/70 p-1">
+    <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
+      <div className="flex shrink-0 items-center gap-1 rounded-full bg-secondary/70 p-1">
         {RADII.map((r) => (
           <Pill key={r} active={filters.radius === r} onClick={() => onChange({ radius: r })}>
             {r < 1000 ? `${r} m` : "1 km"}
@@ -77,7 +79,7 @@ export function FilterBar({ filters, cuisines, onChange }: Props) {
         ))}
       </div>
 
-      <div className="flex items-center gap-1 rounded-full bg-secondary/70 p-1">
+      <div className="flex shrink-0 items-center gap-1 rounded-full bg-secondary/70 p-1">
         <Pill active={filters.mode === "driving"} onClick={() => onChange({ mode: "driving" })}>
           <span className="flex items-center gap-1">
             <Car className="h-3.5 w-3.5" /> By road
@@ -90,8 +92,15 @@ export function FilterBar({ filters, cuisines, onChange }: Props) {
         </Pill>
       </div>
 
+      <Pill active={filters.openNow} onClick={() => onChange({ openNow: !filters.openNow })}>
+        <span className="flex items-center gap-1 whitespace-nowrap"><Clock className="h-3.5 w-3.5" /> Open now</span>
+      </Pill>
+      <Pill active={filters.savedOnly} onClick={() => onChange({ savedOnly: !filters.savedOnly })}>
+        <span className="flex items-center gap-1 whitespace-nowrap"><Heart className="h-3.5 w-3.5" /> Saved</span>
+      </Pill>
+
       <Select value={filters.sort} onValueChange={(v) => onChange({ sort: v as SortKey })}>
-        <SelectTrigger className="h-9 w-[150px] rounded-full bg-card text-xs">
+        <SelectTrigger className="h-9 w-[150px] shrink-0 rounded-full bg-card text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -104,7 +113,7 @@ export function FilterBar({ filters, cuisines, onChange }: Props) {
 
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 rounded-full bg-card text-xs">
+          <Button variant="outline" size="sm" className="h-9 shrink-0 rounded-full bg-card text-xs">
             <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
             Filters
             {activeCount > 0 && (

@@ -15,6 +15,7 @@ type Props = {
 declare global {
   interface Window {
     __brewMapsReady?: () => void;
+    gm_authFailure?: () => void;
   }
 }
 
@@ -53,6 +54,7 @@ export default function CafeMap({ center, cafes, radius, selectedId, route, onSe
 
   useEffect(() => {
     let alive = true;
+    window.gm_authFailure = () => alive && setError("map access not allowed on this address");
     loadGoogleMaps()
       .then(() => {
         if (!alive || !ref.current) return;
@@ -138,7 +140,7 @@ export default function CafeMap({ center, cafes, radius, selectedId, route, onSe
       <div ref={ref} className="h-full w-full" />
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted p-6 text-center text-sm text-muted-foreground">
-          Map couldn't load ({error}). Cafes are still listed.
+          <span>Map couldn't load ({error}).<br />Cafes are still listed below.</span>
         </div>
       )}
     </div>

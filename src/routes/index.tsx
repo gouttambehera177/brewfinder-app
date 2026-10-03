@@ -39,9 +39,18 @@ function Index() {
   const [online, setOnline] = useState(true);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  useEffect(() => { setSaved(readCache<string[]>("brewnear:saved:v1") ?? []); }, []);
+  const toggleSave = (id: string) =>
+    setSaved((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      writeCache("brewnear:saved:v1", next);
+      return next;
+    });
   const [routes, setRoutes] = useState<Record<string, RouteInfo>>({});
   const [filters, setFilters] = useState<Filters>({
-    radius: 500, mode: "walking", prices: [], ambience: [], cuisine: "all", minRating: 0, sort: "distance",
+    radius: 500, mode: "walking", prices: [], ambience: [], cuisine: "all", minRating: 0, sort: "distance", openNow: false, savedOnly: false,
   });
 
   const locate = useCallback(() => {
@@ -107,6 +116,8 @@ function Index() {
         filters.ambience.every((a) => cafe.ambience.includes(a)) &&
         (filters.cuisine === "all" || cafe.cuisine === filters.cuisine) &&
         cafe.rating >= filters.minRating &&
+        (!filters.openNow || cafe.openNow === true) &&
+        (!filters.savedOnly || saved.includes(cafe.id)) &&
         (!q || cafe.name.toLowerCase().includes(q) || cafe.cuisine.toLowerCase().includes(q) || cafe.ambience.some((a) => a.includes(q))),
       );
     const s = filters.sort;
@@ -116,7 +127,7 @@ function Index() {
       s === "price" ? a.cafe.price - b.cafe.price : a.d - b.d,
     );
     return list;
-  }, [all, center, filters, query]);
+  }, [all, center, filters, query, saved]);
 
   const selected = all.find((c) => c.id === selectedId) ?? null;
   const routeKey = (id: string) => `${filters.mode}:${id}:${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;
@@ -149,7 +160,7 @@ function Index() {
       ) : (
         visible.map(({ cafe, d }, i) => (
           <div key={cafe.id} className="animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}>
-            <CafeCard cafe={cafe} route={routes[routeKey(cafe.id)]} straightDistance={d} active={cafe.id === selectedId} onSelect={() => setSelectedId(cafe.id)} />
+            <CafeCard cafe={cafe} route={routes[routeKey(cafe.id)]} straightDistance={d} active={cafe.id === selectedId} onSelect={() => setSelectedId(cafe.id)} saved={saved.includes(cafe.id)} onToggleSave={() => toggleSave(cafe.id)} />
           </div>
         ))
       )}
@@ -194,14 +205,16 @@ function Index() {
 
           {selected && (
             <div className="absolute inset-x-0 bottom-0 z-[1000] max-h-[75%] overflow-hidden rounded-t-3xl shadow-warm animate-in slide-in-from-bottom-4 md:inset-auto md:right-4 md:top-4 md:bottom-4 md:w-[380px] md:max-h-none md:rounded-3xl">
-              <CafeDetail cafe={selected} route={selectedRoute} mode={filters.mode} onClose={() => setSelectedId(null)} />
+              <CafeDetail cafe={selected} route={selectedRoute} mode={filters.mode} onClose={() => setSelectedId(null)} saved={saved.includes(selected.id)} onToggleSave={() => toggleSave(selected.id)} />
             </div>
           )}
 
           {/* Mobile bottom sheet list */}
           {!selected && (
-            <div className="absolute inset-x-0 bottom-0 z-[999] max-h-[45%] overflow-y-auto rounded-t-3xl border-t border-border/60 bg-background/95 p-4 pt-2 shadow-warm backdrop-blur md:hidden">
-              <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border" />
+            <div className={`absolute inset-x-0 bottom-0 z-[999] overflow-y-auto rounded-t-3xl transition-[max-height] duration-300 ease-out ${sheetOpen ? "max-h-[85%]" : "max-h-[42%]"} border-t border-border/60 bg-background/95 p-4 pt-2 shadow-warm backdrop-blur md:hidden`}>
+              <button type="button" onClick={() => setSheetOpen((o) => !o)} aria-label={sheetOpen ? "Show more map" : "Show more cafes"} className="sticky -top-2 z-10 -mx-4 mb-2 flex w-[calc(100%+2rem)] justify-center bg-background/95 py-2">
+                <span className="h-1.5 w-10 rounded-full bg-border" />
+              </button>
               <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {visible.length} cafes nearby
               </p>
