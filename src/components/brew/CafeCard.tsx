@@ -1,4 +1,4 @@
-import { Star, MapPin, Clock } from "lucide-react";
+import { Star, MapPin, Clock, Heart } from "lucide-react";
 
 import type { Cafe, RouteInfo } from "@/lib/places.types";
 import { cn } from "@/lib/utils";
@@ -12,14 +12,17 @@ type Props = {
   straightDistance: number;
   active: boolean;
   onSelect: () => void;
+  saved?: boolean;
+  onToggleSave?: () => void;
 };
 
 export function priceLabel(price: number) {
   return price ? "₹".repeat(price) : "₹ –";
 }
 
-export function CafeCard({ cafe, route, straightDistance, active, onSelect }: Props) {
+export function CafeCard({ cafe, route, straightDistance, active, onSelect, saved, onToggleSave }: Props) {
   return (
+    <div className="relative">
     <button
       type="button"
       onClick={onSelect}
@@ -73,5 +76,17 @@ export function CafeCard({ cafe, route, straightDistance, active, onSelect }: Pr
         </div>
       </div>
     </button>
+    {onToggleSave && (
+      <button
+        type="button"
+        onClick={onToggleSave}
+        aria-label={saved ? `Remove ${cafe.name} from saved` : `Save ${cafe.name}`}
+        aria-pressed={saved}
+        className="absolute left-5 top-5 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-primary shadow-warm transition-transform active:scale-90"
+      >
+        <Heart className={cn("h-3.5 w-3.5", saved && "fill-primary")} />
+      </button>
+    )}
+    </div>
   );
 }

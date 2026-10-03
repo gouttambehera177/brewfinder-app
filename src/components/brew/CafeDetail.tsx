@@ -1,4 +1,5 @@
-import { Star, Phone, MapPin, Globe, Navigation, X, Clock } from "lucide-react";
+import { Star, Phone, MapPin, Globe, Navigation, X, Clock, Share2, Heart } from "lucide-react";
+import { toast } from "sonner";
 
 import type { Cafe, RouteInfo, TravelMode } from "@/lib/places.types";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ type Props = {
   route: RouteInfo | null;
   mode: TravelMode;
   onClose: () => void;
+  saved: boolean;
+  onToggleSave: () => void;
 };
 
 /** Open Google pages in a real new tab; Google refuses to load inside the app frame. */
@@ -21,7 +24,18 @@ function openExternal(url: string) {
   if (!w) window.location.assign(url);
 }
 
-export function CafeDetail({ cafe, route, mode, onClose }: Props) {
+export function CafeDetail({ cafe, route, mode, onClose, saved, onToggleSave }: Props) {
+  const share = async () => {
+    const url = cafe.mapsUri ?? `https://www.google.com/maps/search/?api=1&query=${cafe.lat},${cafe.lng}`;
+    const text = `${cafe.name} — ${cafe.address}`;
+    try {
+      if (navigator.share) await navigator.share({ title: cafe.name, text, url });
+      else {
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        toast.success("Link copied — share it on WhatsApp!");
+      }
+    } catch { /* user cancelled */ }
+  };
   const directions = `https://www.google.com/maps/dir/?api=1&destination=${cafe.lat},${cafe.lng}&destination_place_id=${cafe.id}&travelmode=${mode === "driving" ? "driving" : "walking"}`;
 
   return (
@@ -35,9 +49,17 @@ export function CafeDetail({ cafe, route, mode, onClose }: Props) {
             ) : cafe.photoAttribution.name}
           </span>
         )}
-        <Button size="icon" variant="secondary" onClick={onClose} aria-label="Close details" className="absolute right-3 top-3 rounded-full shadow-warm">
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="absolute right-3 top-3 flex gap-2">
+          <Button size="icon" variant="secondary" onClick={onToggleSave} aria-label={saved ? "Remove from saved" : "Save cafe"} className="rounded-full shadow-warm">
+            <Heart className={saved ? "h-4 w-4 fill-primary text-primary" : "h-4 w-4"} />
+          </Button>
+          <Button size="icon" variant="secondary" onClick={share} aria-label="Share cafe" className="rounded-full shadow-warm">
+            <Share2 className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="secondary" onClick={onClose} aria-label="Close details" className="rounded-full shadow-warm">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
